@@ -1,0 +1,6 @@
+Suche nach Suchbegriff + Fuzz
+
+Fuzz bestehend aus häufig vorkommenden Wörtern. Wenn Anzahl der Ergebnisse für vorherigen Term das Limit von 1.000 Ergebnissen überschreitet, zwei neue Terme mit nächstem Fuzz-Word in negierter und nicht-negierter Form bilden.
+-> Rekursiv
+
+Github Search API verwendet "NOT" für Negation. Muss vor jedem Wort stehen dass negiert werden soll.
