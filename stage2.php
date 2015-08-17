@@ -36,7 +36,7 @@ function process($dir)
 	foreach ($files as $file) {
 		// Find all revisions for each matched file, there is at least the current one
 		$file_commits = [];
-		exec('git blame --porcelain ' . escapeshellarg($file), $file_commits);
+		exec('git blame --porcelain -w ' . escapeshellarg($file), $file_commits);
 
 		$data['files'][$file] = [];
 
@@ -63,7 +63,7 @@ function process($dir)
 		}
 
 		foreach ($commits as $commit) {
-			if ($commit['id'] != '0000000000000000000000000000000000000000' && isset($commit['filename'])) {
+			if (isset($commit['filename'])) {
 				// Dump content of each file at each revision
 				$content = shell_exec('git show ' . escapeshellarg($commit['id']) . ':' . escapeshellarg($commit['filename']));
 				$data['files'][$file][$commit['id']] = [
