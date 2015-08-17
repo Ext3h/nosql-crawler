@@ -28,6 +28,7 @@ function process($dir)
 	// Find all files in master branch which match the pattern
 	$files = [];
 	exec('grep -rIl --include \*.java "@Entity"', $files);
+	exec('grep -rIl --include \*.java "@Embedded"', $files);
 	exec('grep -rIl --include \*.java "com.googlecode.objectify"', $files);
 	exec('grep -rIl --include \*.java "org.mongodb.morphia"', $files);
 	$files = array_unique($files);
@@ -35,14 +36,43 @@ function process($dir)
 	foreach ($files as $file) {
 		// Find all revisions for each matched file, there is at least the current one
 		$file_commits = [];
-		exec('git log --pretty=format:%H --cherry-pick ' . escapeshellarg($file), $file_commits);
+		exec('git log --follow --name-status --pretty=format:%H ' . escapeshellarg($file), $file_commits);
 
 		$data['files'][$file] = [];
 
-		foreach ($file_commits as $commit) {
-			// Dump content of each file at each revision
-			$content = shell_exec('git show ' . escapeshellarg($commit) . ':' . escapeshellarg($file));
-			$data['files'][$file][$commit] = mb_convert_encoding($content, 'UTF-8');
+		$current = [];
+		$commits = [];
+		foreach ($file_commits as $line) {
+			if(!empty($line)) {
+				if(preg_match('/^(?<hash>[a-f0-9]{40})$/', $line, $results)) {
+					if(!empty($current)) {
+						$commits[] = $current;
+					}
+					$current = ['id' => $results['hash']];
+				}
+				if(preg_match('/^((?<action>A|C|D|M|R|T|U|X|B)(?<probability>\d{3})?)(\s+(?<source>[^\s]+))?\s+(?<target>[^\s]+)$/', $line, $results)) {
+					$current['action'] = $results['action'];
+					$current['target'] = $results['target'];
+					$current['probability'] = ($results['probability'] ?: '100') / 100.0;
+					$current['source'] = $results['source'] ?: $results['target'];
+				}
+			}
+		}
+		if(!empty($current)) {
+			$commits[] = $current;
+		}
+
+		foreach ($commits as $commit) {
+			if(isset($commit['action']) && in_array($commit['action'], ['A','R','M'])) {
+				// Dump content of each file at each revision
+				$content = shell_exec('git show ' . escapeshellarg($commit['id']) . ':' . escapeshellarg($commit['target']));
+				$data['files'][$file][$commit['id']] = [
+					'source' => mb_convert_encoding($content, 'UTF-8'),
+					'action' => $commit['action'],
+					'probability' => $commit['probability'],
+					'filename' => $commit['target']
+				];
+			}
 		}
 	}
 
