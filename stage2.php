@@ -36,7 +36,7 @@ function process($dir)
 	foreach ($files as $file) {
 		// Find all revisions for each matched file, there is at least the current one
 		$file_commits = [];
-		exec('git log --follow --name-status --pretty=format:%H ' . escapeshellarg($file), $file_commits);
+		exec('git blame --porcelain ' . escapeshellarg($file), $file_commits);
 
 		$data['files'][$file] = [];
 
@@ -44,17 +44,17 @@ function process($dir)
 		$commits = [];
 		foreach ($file_commits as $line) {
 			if (!empty($line)) {
-				if (preg_match('/^(?<hash>[a-f0-9]{40})$/', $line, $results)) {
+				if (preg_match('/^(?<hash>[a-f0-9]{40})/', $line, $results)) {
 					if (!empty($current)) {
 						$commits[] = $current;
 					}
 					$current = ['id' => $results['hash']];
 				}
-				if (preg_match('/^((?<action>A|C|D|M|R|T|U|X|B)(?<probability>\d{3})?)(\t(?<source>[^\s]+))?\t(?<target>[^\s]+)$/', $line, $results)) {
-					$current['action'] = $results['action'];
-					$current['target'] = $results['target'];
-					$current['probability'] = ($results['probability'] ?: '100') / 100.0;
-					$current['source'] = $results['source'] ?: $results['target'];
+				if (preg_match('/^filename (?<filename>.+)$/', $line, $results)) {
+					$current['filename'] = $results['filename'];
+				}
+				if (preg_match('/^previous (?<hash>[a-f0-9]{40}) (?<filename>.+)$/', $line, $results)) {
+					$current['previous'] = $results['hash'];
 				}
 			}
 		}
@@ -63,15 +63,17 @@ function process($dir)
 		}
 
 		foreach ($commits as $commit) {
-			if (isset($commit['action']) && in_array($commit['action'], ['A', 'R', 'M'])) {
+			if ($commit['id'] != '0000000000000000000000000000000000000000' && isset($commit['filename'])) {
+				if (!isset($commit['previous'])) {
+					$commit['previous'] = '';
+				}
 				// Dump content of each file at each revision
-				$content = shell_exec('git show ' . escapeshellarg($commit['id']) . ':' . escapeshellarg($commit['target']));
+				$content = shell_exec('git show ' . escapeshellarg($commit['id']) . ':' . escapeshellarg($commit['filename']));
 				$data['files'][$file][$commit['id']] = [
 					'commit' => $commit['id'],
 					'source' => mb_convert_encoding($content, 'UTF-8'),
-					'action' => $commit['action'],
-					'probability' => $commit['probability'],
-					'filename' => $commit['target']
+					'filename' => $commit['filename'],
+					'previous' => $commit['previous']
 				];
 			}
 		}
