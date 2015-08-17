@@ -4,7 +4,7 @@ function download($url, $dir)
 	$output = [];
 	$return = 0;
 	exec('git clone ' . escapeshellarg($url) . ' ' . escapeshellarg($dir) . ' 2>&1', $output, $return);
-	if($return) return false;
+	if ($return) return false;
 	return true;
 }
 
@@ -43,14 +43,14 @@ function process($dir)
 		$current = [];
 		$commits = [];
 		foreach ($file_commits as $line) {
-			if(!empty($line)) {
-				if(preg_match('/^(?<hash>[a-f0-9]{40})$/', $line, $results)) {
-					if(!empty($current)) {
+			if (!empty($line)) {
+				if (preg_match('/^(?<hash>[a-f0-9]{40})$/', $line, $results)) {
+					if (!empty($current)) {
 						$commits[] = $current;
 					}
 					$current = ['id' => $results['hash']];
 				}
-				if(preg_match('/^((?<action>A|C|D|M|R|T|U|X|B)(?<probability>\d{3})?)(\s+(?<source>[^\s]+))?\s+(?<target>[^\s]+)$/', $line, $results)) {
+				if (preg_match('/^((?<action>A|C|D|M|R|T|U|X|B)(?<probability>\d{3})?)(\t(?<source>[^\s]+))?\t(?<target>[^\s]+)$/', $line, $results)) {
 					$current['action'] = $results['action'];
 					$current['target'] = $results['target'];
 					$current['probability'] = ($results['probability'] ?: '100') / 100.0;
@@ -58,15 +58,16 @@ function process($dir)
 				}
 			}
 		}
-		if(!empty($current)) {
+		if (!empty($current)) {
 			$commits[] = $current;
 		}
 
 		foreach ($commits as $commit) {
-			if(isset($commit['action']) && in_array($commit['action'], ['A','R','M'])) {
+			if (isset($commit['action']) && in_array($commit['action'], ['A', 'R', 'M'])) {
 				// Dump content of each file at each revision
 				$content = shell_exec('git show ' . escapeshellarg($commit['id']) . ':' . escapeshellarg($commit['target']));
 				$data['files'][$file][$commit['id']] = [
+					'commit' => $commit['id'],
 					'source' => mb_convert_encoding($content, 'UTF-8'),
 					'action' => $commit['action'],
 					'probability' => $commit['probability'],
@@ -107,7 +108,7 @@ function wrapper($repo)
 		// Invalid credentials are only evaluated for private repositories
 		// Specifying them enforces proper bailout with 403
 		$url = 'https://foo:bar@github.com/' . $repo . '.git';
-		if(download($url, $dir)) {
+		if (download($url, $dir)) {
 
 			echo "Processing $repo\n";
 			$data = process($dir);
