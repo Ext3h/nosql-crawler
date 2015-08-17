@@ -27,10 +27,10 @@ function process($dir)
 
 	// Find all files in master branch which match the pattern
 	$files = [];
-	exec('grep -rIl --include \*.java "@Entity"', $files);
-	exec('grep -rIl --include \*.java "@Embedded"', $files);
-	exec('grep -rIl --include \*.java "com.googlecode.objectify"', $files);
-	exec('grep -rIl --include \*.java "org.mongodb.morphia"', $files);
+	exec('grep -rl --include \*.java "@Entity"', $files);
+	exec('grep -rl --include \*.java "@Embedded"', $files);
+	exec('grep -rl --include \*.java "com.googlecode.objectify"', $files);
+	exec('grep -rl --include \*.java "org.mongodb.morphia"', $files);
 	$files = array_unique($files);
 
 	foreach ($files as $file) {
