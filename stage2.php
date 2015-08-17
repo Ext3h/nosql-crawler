@@ -48,13 +48,13 @@ function process($dir)
 					if (!empty($current)) {
 						$commits[] = $current;
 					}
-					$current = ['id' => $results['hash']];
+					$current = ['id' => $results['hash'], 'previous' => []];
 				}
 				if (preg_match('/^filename (?<filename>.+)$/', $line, $results)) {
 					$current['filename'] = $results['filename'];
 				}
 				if (preg_match('/^previous (?<hash>[a-f0-9]{40}) (?<filename>.+)$/', $line, $results)) {
-					$current['previous'] = $results['hash'];
+					$current['previous'][] = $results['hash'];
 				}
 			}
 		}
@@ -64,9 +64,6 @@ function process($dir)
 
 		foreach ($commits as $commit) {
 			if ($commit['id'] != '0000000000000000000000000000000000000000' && isset($commit['filename'])) {
-				if (!isset($commit['previous'])) {
-					$commit['previous'] = '';
-				}
 				// Dump content of each file at each revision
 				$content = shell_exec('git show ' . escapeshellarg($commit['id']) . ':' . escapeshellarg($commit['filename']));
 				$data['files'][$file][$commit['id']] = [
