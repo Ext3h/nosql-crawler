@@ -1,0 +1,30 @@
+[github]
+; Github credentials for authentification against the API
+username =
+password =
+
+useragent = 'NoSQL Crawler Ext3h/nosql-crawler'
+
+[crawler]
+; Terms to search for
+term[] = '"import+com.googlecode.objectify"'
+term[] = '"import+org.mongodb.morphia"'
+term[] = 'language:java "@PostLoad"'
+
+; Auxilliary terms to be used for tautologies
+auxillary[] = '"void"'
+auxillary[] = '"name"'
+auxillary[] = '"Entity"'
+auxillary[] = '"ID"'
+auxillary[] = '"null"'
+auxillary[] = '"static"'
+auxillary[] = '"extends"'
+auxillary[] = '"List"'
+auxillary[] = '"util"'
+
+[download]
+; Maximum repository size in bytes
+max_size = 1000000000
+; Timeout in seconds for checkout
+timeout = 30
+tmp_dir = /tmp/repos

@@ -1,5 +1,6 @@
 <?php
 define('SLEEP_DURATION', 60);
+require_once('config.php');
 
 function load($url) {
 	$filename = 'cache/'.sha1($url).'.html';
@@ -14,6 +15,9 @@ function load($url) {
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($ch, CURLOPT_USERAGENT, config()['github']['useragent']);
+	curl_setopt($ch, CURLOPT_USERPWD, config_user());
+	curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
 	curl_setopt($ch, CURLOPT_HTTPHEADER, [
 		'X-PJAX: true',
 		'X-PJAX-Container: #container',
@@ -136,8 +140,8 @@ function sortAuxiliary($keyword, $auxiliary) {
 	return array_keys($results);
 }
 
-$auxiliary = ['"void"','"name"','"Entity"','"ID"','"null"','"static"','"extends"','"List"','"util"'];
+$auxiliary = config()['crawler']['auxillary'];
 
-search('"import+com.googlecode.objectify"', sortAuxiliary('"import+com.googlecode.objectify"', $auxiliary));
-search('"import+org.mongodb.morphia"', sortAuxiliary('"import+org.mongodb.morphia"', $auxiliary));
-search('language:java "@PostLoad"', sortAuxiliary('language:java "@PrePersist"', $auxiliary));
+foreach(config()['crawler']['term'] as $term) {
+	search($term, sortAuxiliary($term, $auxiliary));
+}

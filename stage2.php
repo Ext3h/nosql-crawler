@@ -1,11 +1,31 @@
 <?php
+require_once('config.php');
+
 function download($url, $dir)
 {
 	$output = [];
 	$return = 0;
-	exec('git clone ' . escapeshellarg($url) . ' ' . escapeshellarg($dir) . ' 2>&1', $output, $return);
+	exec('timeout '.config()['download']['timeout'].'s git clone ' . escapeshellarg($url) . ' ' . escapeshellarg($dir) . ' 2>&1', $output, $return);
 	if ($return) return false;
 	return true;
+}
+
+function download_metadata($repo)
+{
+	$url = 'https://api.github.com/repos/' . $repo;
+
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($ch, CURLOPT_USERAGENT, config()['github']['useragent']);
+	curl_setopt($ch, CURLOPT_USERPWD, config_user());
+	curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+	$api_response = curl_exec($ch);
+	curl_close($ch);
+
+	$api_response = json_decode($api_response, true);
+
+	return $api_response;
 }
 
 function process($dir)
@@ -83,8 +103,9 @@ function process($dir)
 
 function wrapper($repo)
 {
-	$dir = '/tmp/repos/' . base64_encode($repo);
-	$lockfile = '/tmp/repos/' . base64_encode($repo) . '.lock';
+	$basedir = config()['download']['tmp_dir'];
+	$dir = $basedir. DIRECTORY_SEPARATOR . base64_encode($repo);
+	$lockfile = $basedir. DIRECTORY_SEPARATOR . base64_encode($repo) . '.lock';
 	$datafile = 'repos/' . base64_encode($repo) . '.json';
 
 	// Create lock dir if non existent yet
@@ -100,23 +121,42 @@ function wrapper($repo)
 	// Attempt to lock
 	$lock = fopen($lockfile, 'w');
 	if (flock($lock, LOCK_EX | LOCK_NB, $blocked) && !file_exists($datafile)) {
+		$data = ['name' => $repo];
 
+		$data['github'] = download_metadata($repo);
 
-		echo "Downloading $repo\n";
-		@mkdir($dir, 0777, true);
-		// Invalid credentials are only evaluated for private repositories
-		// Specifying them enforces proper bailout with 403
-		$url = 'https://foo:bar@github.com/' . $repo . '.git';
-		if (download($url, $dir)) {
-
-			echo "Processing $repo\n";
-			$data = process($dir);
-			$data['name'] = $repo;
-			file_put_contents($datafile, json_encode($data));
-
-		} else {
-			echo "Download for $repo failed\n";
+		$skip = false;
+		if (!isset($data['github']['private']) || $data['github']['private'] != false) {
+			echo "$repo is private\n";
+			$skip = true;
 		}
+		if ($data['github']['size'] * 1024 > config()['download']['max_size']) {
+			echo "$repo is too large\n";
+			$skip = true;
+		}
+
+		if (!$skip) {
+			echo "Downloading $repo\n";
+			@mkdir($dir, 0777, true);
+			// Credentials are only evaluated for private repositories
+			// Specifying them enforces proper bailout with 403
+			// Omitting them causes git to hang
+			$url = 'https://'.config_user().'@github.com/' . $repo . '.git';
+			if (download($url, $dir)) {
+
+				echo "Processing $repo\n";
+				$data = array_merge($data, process($dir));
+
+			} else {
+				echo "Download for $repo failed\n";
+				$data['failed'] = true;
+			}
+		} else {
+			echo "Skippping $repo\n";
+			$data['skipped'] = true;
+		}
+
+		file_put_contents($datafile, json_encode($data));
 
 		// Clean up
 		exec('rm -rf ' . escapeshellarg($dir));

@@ -1,4 +1,5 @@
-cache/
-repos/
-repos*
-.idea/
+/config.ini
+/cache/
+/repos/
+repos.txt
+/.idea/
