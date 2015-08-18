@@ -11,16 +11,16 @@ term[] = '"import+com.googlecode.objectify"'
 term[] = '"import+org.mongodb.morphia"'
 term[] = 'language:java "@PostLoad"'
 
-; Auxilliary terms to be used for tautologies
-auxillary[] = '"void"'
-auxillary[] = '"name"'
-auxillary[] = '"Entity"'
-auxillary[] = '"ID"'
-auxillary[] = '"null"'
-auxillary[] = '"static"'
-auxillary[] = '"extends"'
-auxillary[] = '"List"'
-auxillary[] = '"util"'
+; Auxiliary terms to be used for tautologies
+auxiliary[] = '"void"'
+auxiliary[] = '"name"'
+auxiliary[] = '"Entity"'
+auxiliary[] = '"ID"'
+auxiliary[] = '"null"'
+auxiliary[] = '"static"'
+auxiliary[] = '"extends"'
+auxiliary[] = '"List"'
+auxiliary[] = '"util"'
 
 [download]
 ; Maximum repository size in bytes

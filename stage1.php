@@ -109,7 +109,7 @@ function search($keyword, $tautologies) {
 			search($keyword . ' ' . $word, $tautologies);
 			search($keyword . ' NOT ' . $word, $tautologies);
 		} else {
-			echo "Error: Not enough auxilary words left for '$keyword'\n";
+			echo "Error: Not enough auxiliary words left for '$keyword'\n";
 			exit(1);
 		}
 	} elseif($count) {
@@ -140,7 +140,7 @@ function sortAuxiliary($keyword, $auxiliary) {
 	return array_keys($results);
 }
 
-$auxiliary = config()['crawler']['auxillary'];
+$auxiliary = config()['crawler']['auxiliary'];
 
 foreach(config()['crawler']['term'] as $term) {
 	search($term, sortAuxiliary($term, $auxiliary));
