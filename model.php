@@ -53,5 +53,13 @@ class Schema
 	/**
 	 * @var bool
 	 */
+	var $containsMigration = false;
+	/**
+	 * @var bool
+	 */
 	var $containsEmbedded = false;
+	/**
+	 * @var string[]
+	 */
+	var $annotations = [];
 }

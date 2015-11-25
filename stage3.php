@@ -37,16 +37,42 @@ while (false !== ($entry = readdir($handle))) {
 
 				$first = current($file);
 
-				if(preg_match('/@(?:AlsoLoad|OnLoad|OnSave|NotSaved)/', $first['source'])) {
+				preg_match_all('/@([a-zA-Z]+)/', $first['source'], $match);
+				$schema->annotations = array_count_values($match[1]);
+
+				$annotations = array_keys($schema->annotations);
+
+				if(sizeof(array_intersect($annotations, [
+					'OnLoad',
+					'OnSave',
+					'PrePersist',
+					'PreSave',
+					'PostPersist',
+					'PreLoad',
+					'PostLoad',
+				]))) {
 					$schema->containsLifecycleEvents = true;
 				}
 
+				if(sizeof(array_intersect($annotations, [
+						'AlsoLoad',
+						'NotSaved',
+						'IgnoreLoad',
+						'IgnoreSave',
+				]))) {
+					$schema->containsMigration = true;
+				}
+
 				//TODO This is inaccurate - with objectify any non-"native" class acts as embedded
-				if(strpos($first['source'], '@Embedded') !== false) {
+				if(sizeof(array_intersect($annotations, [
+						'Embedded',
+				]))) {
 					$schema->containsEmbedded = true;
 				}
 
-				if(strpos($first['source'], '@Entity') !== false) {
+				if(sizeof(array_intersect($annotations, [
+						'Entity',
+				]))) {
 					$schema->isEntity = true;
 				}
 
