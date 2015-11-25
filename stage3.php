@@ -1,59 +1,6 @@
 <?php
 require_once('config.php');
-
-class Project {
-	/**
-	 * @var string
-	 */
-	var $name = '';
-	/**
-	 * @var Schema[]
-	 */
-	var $schemas = [];
-	/**
-	 * @var int
-	 */
-	var $revisions = 0;
-	/**
-	 * @var bool
-	 */
-	var $isObjectify = false;
-	/**
-	 * @var bool
-	 */
-	var $isMorphia = false;
-}
-
-class Schema {
-	/**
-	 * @var string
-	 */
-	var $filename = '';
-	/**
-	 * @var int
-	 */
-	var $revisions = 0;
-	/**
-	 * @var bool
-	 */
-	var $isObjectify = false;
-	/**
-	 * @var bool
-	 */
-	var $isMorphia = false;
-	/**
-	 * @var bool
-	 */
-	var $isEntity = false;
-	/**
-	 * @var bool
-	 */
-	var $containsLifecycleEvents = false;
-	/**
-	 * @var bool
-	 */
-	var $containsEmbedded = false;
-}
+require_once('model.php');
 
 //TODO Track schema evolutions, which fields exist in a certain revision?
 
@@ -61,7 +8,7 @@ $dir = 'repos';
 $handle = opendir($dir);
 
 /**
- * @var Project[]
+ * @var $projects Project[]
  */
 $projects = [];
 
