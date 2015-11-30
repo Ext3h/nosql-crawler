@@ -38,13 +38,24 @@ function load($url) {
 }
 
 function countResults($text) {
-	preg_match('/(found|Showing) (\d{1,3}(,\d{3})*)( available)? code results?/', $text, $matches);
-	if(isset($matches[2])) {
-		return (int)str_replace(',','',$matches[2]);
-	} else {
-		echo "Unexpected format, could not count results!\n";
-		return 0;
+	$xml = new DOMDocument();
+
+	@$xml->loadHTML($text);
+
+	$xpath = new DOMXpath($xml);
+
+	$counters = $xpath->query('//nav[@class="menu"]//span[@class="counter"]');
+
+	for($i = 0; $i < $counters->length; $i++) {
+		$content = $counters->item($i)->textContent;
+		$content = str_replace(',','',$content);
+		if((int)$content) {
+			return (int)$content;
+		}
 	}
+
+	echo "Warn: Unexpected format, could not count results!\n";
+	return 0;
 }
 
 function countPages($text) {
