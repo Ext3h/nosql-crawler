@@ -21,7 +21,10 @@ while (false !== ($entry = readdir($handle))) {
 		$project = new Project();
 		$project->name = $content['name'];
 
+		$revisions = [];
+
 		if(isset($content['commits'])) {
+			$revisions = $content['commits'];
 			$project->revisions = sizeof($content['commits']);
 		}
 
@@ -35,9 +38,20 @@ while (false !== ($entry = readdir($handle))) {
 
 				$schema->revisions = sizeof($file);
 
-				$first = current($file);
+				// Get most recent version of the file, as defined by the order of commits
+				uksort($file, function($a, $b) use (&$revisions) {
+					return strcmp($revisions[$a][2], $revisions[$b][2]);
+				});
 
-				preg_match_all('/@([a-zA-Z]+)/', $first['source'], $match);
+				$recent = end($file);
+
+				$source = $recent['source'];
+
+				// Strip comments, this is not exactly accurate, but close enough for Java
+				$source = preg_replace('!/\*.*?\*/!s', '', $source);
+				$source = preg_replace('!//.*[ \t]*[\r\n]!', '', $source);
+
+				preg_match_all('/@([a-zA-Z]+)/', $source, $match);
 				$schema->annotations = array_count_values($match[1]);
 
 				$annotations = array_keys($schema->annotations);
@@ -76,11 +90,11 @@ while (false !== ($entry = readdir($handle))) {
 					$schema->isEntity = true;
 				}
 
-				if(strpos($first['source'], 'objectify') !== false) {
+				if(strpos($source, 'objectify') !== false) {
 					$schema->isObjectify = true;
 					$project->isObjectify = true;
 				}
-				if(strpos($first['source'], 'morphia') !== false) {
+				if(strpos($source, 'morphia') !== false) {
 					$schema->isMorphia = true;
 					$project->isMorphia = true;
 				}
@@ -89,6 +103,8 @@ while (false !== ($entry = readdir($handle))) {
 
 				$project->schemas[] = $schema;
 
+				unset($recent);
+				unset($source);
 				unset($schema);
 				unset($file);
 			}
