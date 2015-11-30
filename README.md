@@ -72,12 +72,56 @@ This approach has the distinct advantage of fast processing speed, both during c
 The files are identified using the POSIX `grep` tool, relevant file revision are extracted using `git show`.
 
 ### Result
-For Objectify, this approach allowed to distill over 200GB of sources into <500MB of relevant data within less than 20 minutes using only a dual core processor.
+For Objectify, this approach allowed to distill over 400GB of sources into <4GB of relevant data within less than 20 minutes using only a dual core processor.
 
 Even with a Gigabit Internet connection, a quad core would be sufficient to saturate the network bandwidth.
 
 Stage 3: Parse and analyze
 --------------------------
+### Goal
+Classify all sources and projects. For each project or file attribute of interest, provide a boolean predicate which can be queried for.
+
+
+Of interest are:
+*   Identification of used technology (Morphia, Objectify, etc.).
+*   Identification of entity classes.
+*   Use of lifecycle events in entities.
+*   Use of migration related annotations in entities.
+*   Generic statistics regarding activity.
+
+### Approach
+The clean approach would have been to parse the Java source code.
+
+Performing a pure text search is sufficient to identify the use of annotations.
+For each file identified in the previous stage, the latest revision is matched against the use of annotations.
+
+Any file containing one of the following annotations is considered as using live cycle events:
+-	@OnLoad
+-	@OnSave
+-	@PrePersist
+-	@PreSave
+-	@PostPersist
+-	@PreLoad
+-	@PostLoad
+
+Any file containing one of the following annotations is considered as potentially performing lazy migration:
+-	@AlsoLoad
+-	@NotSaved
+-	@IgnoreLoad
+-	@IgnoreSave
+
+A file importing from from a package containing `objectify` in its name is classified as an entity managed by Objectify.
+
+A file importing from from a package containing `moprhia` in its name is classified as an entity managed by Morphia.
+
+The summary of all projects is then stored in a single json file for further analysis.
+
+### Result
+The data produced by this stage can be queried efficiently to perform statistical analysis.
+
+The 4GB of source code from the previous stage are distilled into a compact database of <100MB.
 
 Stage 4: Statistical evaluation
 -------------------------------
+
+WIP
