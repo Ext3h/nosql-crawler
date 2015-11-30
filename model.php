@@ -31,6 +31,10 @@ class Schema
 	 */
 	var $filename = '';
 	/**
+	 * @var string
+	 */
+	var $commit = '';
+	/**
 	 * @var int
 	 */
 	var $revisions = 0;

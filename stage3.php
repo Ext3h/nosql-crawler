@@ -44,6 +44,7 @@ while (false !== ($entry = readdir($handle))) {
 				});
 
 				$recent = end($file);
+				$schema->commit = key($file);
 
 				$source = $recent['source'];
 
