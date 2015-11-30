@@ -15,6 +15,7 @@ The keywords "import com.googlecode.objectify" and "import org.mongodb.morphia" 
 containing logic or annotations related to Objectify or Morphia.
 
 The Github search API has various arbitrary limitations:
+
 *   For each search term, only the first 1.000 rows can be accessed.
 *   Rate limit of 30 requests per minute when using the search API, respectively 10 per minute if not authenticated.
 *   No more than 5 modifiers can be used per search clause.
@@ -22,6 +23,7 @@ The Github search API has various arbitrary limitations:
 *   Code search via the API can only search inside a single repository.
 
 Based on these limitations, a number of possible approaches have been identified:
+
 *   Iterate over all known repositories and issue a code search query for each single repository.
     This approach has been ruled out as there is a total of far beyond 20 million repositories on Github which would have
     meant a runtime of more than a year per search term.
@@ -46,7 +48,7 @@ Due to the limit of 5 modifiers, the binary tree spanned by the call graph needs
 This is achieved by choosing mostly uncorrelated auxiliary terms with a high frequency, occurring in preferably at least 50% of all relevant documents.
 The terms are sorted descending by frequency in order to avoid long chains of negations as far as possible.
 
-### Result
+### Performance
 This approach allows to fetch results at a rate of roughly 100 results per minute.
 For Objectify, this means that all 1.600 repositories, containing a total of 21.000 matching files, can be fetched in less than 6 hours.
 
@@ -71,7 +73,7 @@ This approach has the distinct advantage of fast processing speed, both during c
 
 The files are identified using the POSIX `grep` tool, relevant file revision are extracted using `git show`.
 
-### Result
+### Performance
 For Objectify, this approach allowed to distill over 400GB of sources into <4GB of relevant data within less than 20 minutes using only a dual core processor.
 
 Even with a Gigabit Internet connection, a quad core would be sufficient to saturate the network bandwidth.
@@ -83,6 +85,7 @@ Classify all sources and projects. For each project or file attribute of interes
 
 
 Of interest are:
+
 *   Identification of used technology (Morphia, Objectify, etc.).
 *   Identification of entity classes.
 *   Use of lifecycle events in entities.
@@ -96,6 +99,7 @@ Performing a pure text search is sufficient to identify the use of annotations.
 For each file identified in the previous stage, the latest revision is matched against the use of annotations.
 
 Any file containing one of the following annotations is considered as using live cycle events:
+
 -	@OnLoad
 -	@OnSave
 -	@PrePersist
@@ -105,6 +109,7 @@ Any file containing one of the following annotations is considered as using live
 -	@PostLoad
 
 Any file containing one of the following annotations is considered as potentially performing lazy migration:
+
 -	@AlsoLoad
 -	@NotSaved
 -	@IgnoreLoad
@@ -114,14 +119,17 @@ A file importing from from a package containing `objectify` in its name is class
 
 A file importing from from a package containing `moprhia` in its name is classified as an entity managed by Morphia.
 
+A project is classified as using Objectify or Morphia when it contains a single entity using the corresponding framework.
+
 The summary of all projects is then stored in a single json file for further analysis.
 
-### Result
+### Performance
 The data produced by this stage can be queried efficiently to perform statistical analysis.
 
 The 4GB of source code from the previous stage are distilled into a compact database of <100MB.
+The resulting database can easily be handled in memory.
 
 Stage 4: Statistical evaluation
 -------------------------------
 
-WIP
+WIP, not automated yet.
