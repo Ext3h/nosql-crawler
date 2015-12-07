@@ -11,12 +11,12 @@ All public repositories on Github are to be searched and filtered for the use of
 The libraries are being detected by the presence of certain keywords in the codebase of each repository.
 
 ### Approach
-The keywords "import com.googlecode.objectify" and "import org.mongodb.morphia" have been chosen to identify all files
+The keywords `"import com.googlecode.objectify"` and `"import org.mongodb.morphia"` have been chosen to identify all files
 containing logic or annotations related to Objectify or Morphia.
 
 The Github search API has various arbitrary limitations:
 
-*   For each search term, only the first 1.000 rows can be accessed.
+*   For each search term, only the first 1,000 results can be accessed.
 *   Rate limit of 30 requests per minute when using the search API, respectively 10 per minute if not authenticated.
 *   No more than 5 modifiers can be used per search clause.
 *   All result sets are paginated into groups of 100 rows, each page counts as an individual query.
@@ -35,8 +35,8 @@ Based on these limitations, a number of possible approaches have been identified
 The first 3 limitations of the API also apply to web interface.
 In addition, the web interface will paginate the results, exposing only 10 rows at a time.
 
-The limit of 1.000 results is a problem, since e.g. only for  "import com.googlecode.objectify" alone, there are over 20.000 relevant results from over 1.600 repositories.
-Being limited to the first 1.000 of these results yielded less than 200 distinct repositories which isn't enough.
+The limit of 1,000 results is a problem, since e.g. only for  "import com.googlecode.objectify" alone, there are over 20,000 relevant results from over 1,600 repositories.
+Being limited to the first 1,000 of these results yielded less than 200 distinct repositories which isn't enough.
 
 This limitation can be avoided by forming tautologies with auxiliary search terms.
 Per default, the search function joins all terms with an implicit "AND" which does not count towards the modifier limit.
@@ -50,7 +50,7 @@ The terms are sorted descending by frequency in order to avoid long chains of ne
 
 ### Performance
 This approach allows to fetch results at a rate of roughly 100 results per minute.
-For Objectify, this means that all 1.600 repositories, containing a total of 21.000 matching files, can be fetched in less than 6 hours.
+For Objectify, this means that all 1,600 repositories, containing a total of 21,000 matching files, can be fetched in less than 6 hours.
 
 The runtime is still unsatisfying, but as low as it gets considering the current limitations.
 
@@ -74,7 +74,7 @@ This approach has the distinct advantage of fast processing speed, both during c
 The files are identified using the POSIX `grep` tool, relevant file revision are extracted using `git show`.
 
 ### Performance
-For Objectify, this approach allowed to distill over 400GB of sources into <4GB of relevant data within less than 20 minutes using only a dual core processor.
+For Objectify and Morphia, this approach allowed to distill over 400GB of sources into <4GB of relevant data within less than 20 minutes using only a dual core processor.
 
 Even with a Gigabit Internet connection, a quad core would be sufficient to saturate the network bandwidth.
 
@@ -100,24 +100,26 @@ For each file identified in the previous stage, the latest revision is matched a
 
 Any file containing one of the following annotations is considered as using live cycle events:
 
--	@OnLoad
--	@OnSave
--	@PrePersist
--	@PreSave
--	@PostPersist
--	@PreLoad
--	@PostLoad
+-	`@OnLoad`
+-	`@OnSave`
+-	`@PrePersist`
+-	`@PreSave`
+-	`@PostPersist`
+-	`@PreLoad`
+-	`@PostLoad`
 
 Any file containing one of the following annotations is considered as potentially performing lazy migration:
 
--	@AlsoLoad
--	@NotSaved
--	@IgnoreLoad
--	@IgnoreSave
+-	`@AlsoLoad`
+-	`@NotSaved`
+-	`@IgnoreLoad`
+-	`@IgnoreSave`
 
-A file importing from from a package containing `objectify` in its name is classified as an entity managed by Objectify.
+A file importing from a package containing `objectify` in its name is classified as using Objectify.
 
-A file importing from from a package containing `moprhia` in its name is classified as an entity managed by Morphia.
+A file importing from a package containing `morphia` in its name is classified as using Morphia.
+
+A file containing a class annotated with `@Entity` is classified as containing an entity class.
 
 A project is classified as using Objectify or Morphia when it contains a single entity using the corresponding framework.
 
