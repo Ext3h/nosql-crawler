@@ -20,6 +20,7 @@ function download_metadata($repo)
 	curl_setopt($ch, CURLOPT_USERAGENT, config()['github']['useragent']);
 	curl_setopt($ch, CURLOPT_USERPWD, config_user());
 	curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 	$api_response = curl_exec($ch);
 	curl_close($ch);
 
@@ -130,11 +131,15 @@ function wrapper($repo)
 			echo "$repo is private\n";
 			$skip = true;
 		}
-		if ($data['github']['size'] * 1024 > config()['download']['max_size']) {
-			echo "$repo is too large\n";
+		if(isset($data['github']['size'])) {
+			if ($data['github']['size'] * 1024 > config()['download']['max_size']) {
+				echo "$repo is too large\n";
+				$skip = true;
+			}
+		} else {
+			echo "$repo not found\n";
 			$skip = true;
 		}
-
 		if (!$skip) {
 			echo "Downloading $repo\n";
 			@mkdir($dir, 0777, true);
