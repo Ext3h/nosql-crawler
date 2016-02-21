@@ -5,7 +5,7 @@ function download($url, $dir)
 {
 	$output = [];
 	$return = 0;
-	exec('timeout '.config()['download']['timeout'].'s git clone ' . escapeshellarg($url) . ' ' . escapeshellarg($dir) . ' 2>&1', $output, $return);
+	exec('timeout ' . config()['download']['timeout'] . 's git clone ' . escapeshellarg($url) . ' ' . escapeshellarg($dir) . ' 2>&1', $output, $return);
 	if ($return) return false;
 	return true;
 }
@@ -38,7 +38,7 @@ function process($dir)
 
 	// Get a list of all commits
 	$commits = [];
-	exec('git log --pretty=format:"%H;%aI;%cI" --cherry-pick ', $commits);
+	exec('git log --cherry-pick --topo-order --pretty=format:"%H;%aI;%cI;%P" --cherry-pick ', $commits);
 
 	$data['commits'] = [];
 	foreach ($commits as $commit) {
@@ -57,43 +57,27 @@ function process($dir)
 	foreach ($files as $file) {
 		// Find all revisions for each matched file, there is at least the current one
 		$file_commits = [];
-		exec('git blame --porcelain -w ' . escapeshellarg($file), $file_commits);
+		exec('git log --cherry-pick --topo-order --pretty=format:%H ' . escapeshellarg($file), $file_commits);
 
 		$data['files'][$file] = [];
 
-		$current = [];
 		$commits = [];
 		foreach ($file_commits as $line) {
-			if (!empty($line)) {
-				if (preg_match('/^(?<hash>[a-f0-9]{40})/', $line, $results)) {
-					if (!empty($current)) {
-						$commits[] = $current;
-					}
-					$current = ['id' => $results['hash'], 'previous' => []];
-				}
-				if (preg_match('/^filename (?<filename>.+)$/', $line, $results)) {
-					$current['filename'] = $results['filename'];
-				}
-				if (preg_match('/^previous (?<hash>[a-f0-9]{40}) (?<filename>.+)$/', $line, $results)) {
-					$current['previous'][] = $results['hash'];
-				}
+			if (preg_match('/^(?<hash>[a-f0-9]{40})/', $line, $results)) {
+				$commits[] = $results['hash'];
 			}
-		}
-		if (!empty($current)) {
-			$commits[] = $current;
 		}
 
 		foreach ($commits as $commit) {
-			if (isset($commit['filename'])) {
-				// Dump content of each file at each revision
-				$content = shell_exec('git show ' . escapeshellarg($commit['id']) . ':' . escapeshellarg($commit['filename']));
-				$data['files'][$file][$commit['id']] = [
-					'commit' => $commit['id'],
-					'source' => mb_convert_encoding($content, 'UTF-8'),
-					'filename' => $commit['filename'],
-					'previous' => $commit['previous']
-				];
-			}
+			// Dump content of each file at each revision
+			$content = shell_exec('git show ' . escapeshellarg($commit) . ':' . escapeshellarg($file) . ' 2> /dev/null');
+
+			// $content can be empty - we do expect that if a file has been deleted temporarily!
+			$data['files'][$file][$commit] = [
+				'commit' => $commit,
+				'source' => mb_convert_encoding($content, 'UTF-8'),
+				'filename' => $file,
+			];
 		}
 	}
 
@@ -105,8 +89,8 @@ function process($dir)
 function wrapper($repo)
 {
 	$basedir = config()['download']['tmp_dir'];
-	$dir = $basedir. DIRECTORY_SEPARATOR . base64_encode($repo);
-	$lockfile = $basedir. DIRECTORY_SEPARATOR . base64_encode($repo) . '.lock';
+	$dir = $basedir . DIRECTORY_SEPARATOR . base64_encode($repo);
+	$lockfile = $basedir . DIRECTORY_SEPARATOR . base64_encode($repo) . '.lock';
 	$datafile = 'repos/' . base64_encode($repo) . '.json';
 
 	// Create lock dir if non existent yet
@@ -131,7 +115,7 @@ function wrapper($repo)
 			echo "$repo is private\n";
 			$skip = true;
 		}
-		if(isset($data['github']['size'])) {
+		if (isset($data['github']['size'])) {
 			if ($data['github']['size'] * 1024 > config()['download']['max_size']) {
 				echo "$repo is too large\n";
 				$skip = true;
@@ -146,7 +130,7 @@ function wrapper($repo)
 			// Credentials are only evaluated for private repositories
 			// Specifying them enforces proper bailout with 403
 			// Omitting them causes git to hang
-			$url = 'https://'.config_user().'@github.com/' . $repo . '.git';
+			$url = 'https://' . config_user() . '@github.com/' . $repo . '.git';
 			if (download($url, $dir)) {
 
 				echo "Processing $repo\n";
