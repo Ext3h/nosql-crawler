@@ -90,6 +90,7 @@ Of interest are:
 *   Identification of entity classes.
 *   Use of lifecycle events in entities.
 *   Use of migration related annotations in entities.
+*   Schema evolutions, identified by tracking class attributes.
 *   Generic statistics regarding activity.
 
 ### Approach
@@ -123,6 +124,9 @@ A file containing a class annotated with `@Entity` is classified as containing a
 
 A project is classified as using Objectify or Morphia when it contains a single entity using the corresponding framework.
 
+For tracking evolutions, the set of class attributes is compared in between two following revisions each.
+Each newly found and removed attribute is tracked, as well as all attributes where an annotation, type or default intializer has changed.
+
 The summary of all projects is then stored in a single json file for further analysis.
 
 ### Performance
@@ -130,6 +134,10 @@ The data produced by this stage can be queried efficiently to perform statistica
 
 The 4GB of source code from the previous stage are distilled into a compact database of <100MB.
 The resulting database can easily be handled in memory.
+
+### Output format
+See [model.php](model.php) for the format of the generated `analysis.json` file.
+This file contains an array of `Project` instances, describing each single analyzed project.
 
 Stage 4: Statistical evaluation
 -------------------------------
