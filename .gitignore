@@ -1,5 +1,5 @@
 /config.ini
-/cache/
-/repos/
+/cache*/
+/repos*/
 repos.txt
 /.idea/
