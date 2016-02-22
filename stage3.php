@@ -16,14 +16,14 @@ function extract_attributes($source)
 	$source = preg_replace('#"([^"]|[\\\]")*?(?![\\\])"#s', '""', $source);
 
 	// Isolate class content, assuming only top level class
-	if(!preg_match('#class[^{]*{(.*)}#s', $source, $results)) {
+	if (!preg_match('#class[^{]*{(.*)}#s', $source, $results)) {
 		// No class to be found, probably because there is no legit source code
 		return [];
 	}
 	$source = $results[1];
 
 	// Eliminate method heads
-	$source = preg_replace('#(?<=;|})[^;{}]*(?={)#', '', $source);
+	$source = preg_replace('#(?<=;|})[^;{}]*(?={)#s', '', $source);
 
 	// Eliminate method bodies
 	do {
@@ -41,12 +41,13 @@ function extract_attributes($source)
 	} while ($count);
 
 	// Parse attributes
-	preg_match_all('#(?<annotation>(?:@[[:alnum:]]+\s*?)+)?\s*' // Match all annotations
-		. '(?<visibility>public|private|protected)?\s*' // Visbility modifiers
+	preg_match_all('#(^|;)\s*'
+		. '(?<annotation>(?:@[[:alnum:]]+\s*?)+)?\s*' // Match all annotations
+		. '(?<visibility>public|private|protected)?\s*' // Visibility modifiers
 		. '(?<type>[[:alnum:]]*)\s*' // Type without templates
 		. '(?<name>[[:alnum:]]*)\s*' // Variable name
 		. '(?:=\s*(?<default>[^;]+?))?\s*' // Defaults
-		. ';#', $source, $match, PREG_SET_ORDER);
+		. ';#s', $source, $match, PREG_SET_ORDER);
 
 	$output = [];
 
@@ -56,7 +57,7 @@ function extract_attributes($source)
 		$attribute->name = $var['name'];
 		$attribute->type = $var['type'];
 
-		if(isset($var['visibility'])) {
+		if (isset($var['visibility'])) {
 			$attribute->visibility = $var['visibility'];
 		} else {
 			$attribute->visibility = 'default';
@@ -71,7 +72,7 @@ function extract_attributes($source)
 			$attribute->annnotations = $var['annotation'];
 		}
 
-		if(isset($var['default'])) {
+		if (isset($var['default'])) {
 			$attribute->default = $var['default'];
 		}
 
@@ -100,14 +101,14 @@ while (false !== ($entry = readdir($handle))) {
 
 		$revisions = [];
 
-		if(isset($content['commits'])) {
+		if (isset($content['commits'])) {
 			$revisions = $content['commits'];
 			$project->revisions = sizeof($content['commits']);
 		}
 
-		if(isset($content['files'])) {
+		if (isset($content['files'])) {
 
-			foreach($content['files'] as $name => &$file) {
+			foreach ($content['files'] as $name => &$file) {
 
 				$schema = new Schema();
 
@@ -116,7 +117,7 @@ while (false !== ($entry = readdir($handle))) {
 				$schema->revisions = sizeof($file);
 
 				// Get most recent version of the file, as defined by the order of commits
-				uksort($file, function($a, $b) use (&$revisions) {
+				uksort($file, function ($a, $b) use (&$revisions) {
 					return strcmp($revisions[$a][2], $revisions[$b][2]);
 				});
 
@@ -134,7 +135,7 @@ while (false !== ($entry = readdir($handle))) {
 
 				$annotations = array_keys($schema->annotations);
 
-				if(sizeof(array_intersect($annotations, [
+				if (sizeof(array_intersect($annotations, [
 					'OnLoad',
 					'OnSave',
 					'PrePersist',
@@ -146,34 +147,34 @@ while (false !== ($entry = readdir($handle))) {
 					$schema->containsLifecycleEvents = true;
 				}
 
-				if(sizeof(array_intersect($annotations, [
-						'AlsoLoad',
-						'NotSaved',
-						'IgnoreLoad',
-						'IgnoreSave',
+				if (sizeof(array_intersect($annotations, [
+					'AlsoLoad',
+					'NotSaved',
+					'IgnoreLoad',
+					'IgnoreSave',
 				]))) {
 					$schema->containsMigration = true;
 				}
 
 				//TODO This is inaccurate - with objectify any non-"native" class acts as embedded
-				if(sizeof(array_intersect($annotations, [
-						'Embedded',
-						'Embed',
+				if (sizeof(array_intersect($annotations, [
+					'Embedded',
+					'Embed',
 				]))) {
 					$schema->containsEmbedded = true;
 				}
 
-				if(sizeof(array_intersect($annotations, [
-						'Entity',
+				if (sizeof(array_intersect($annotations, [
+					'Entity',
 				]))) {
 					$schema->isEntity = true;
 				}
 
-				if(strpos($source, 'objectify') !== false) {
+				if (strpos($source, 'objectify') !== false) {
 					$schema->isObjectify = true;
 					$project->isObjectify = true;
 				}
-				if(strpos($source, 'morphia') !== false) {
+				if (strpos($source, 'morphia') !== false) {
 					$schema->isMorphia = true;
 					$project->isMorphia = true;
 				}
@@ -187,13 +188,13 @@ while (false !== ($entry = readdir($handle))) {
 				// Actual development activity could have been hidden by this.
 				$trace = [];
 				$currentCommit = $recent['commit'];
-				while($currentCommit) {
+				while ($currentCommit) {
 					// The revision is know, so mark it for analysis
-					if(isset($file[$currentCommit])) {
+					if (isset($file[$currentCommit])) {
 						$trace[] = $currentCommit;
 					}
 					// Parent commit
-					if(isset($revisions[$currentCommit][3]) && !empty($revisions[$currentCommit][3])) {
+					if (isset($revisions[$currentCommit][3]) && !empty($revisions[$currentCommit][3])) {
 						$currentCommit = $revisions[$currentCommit][3];
 					} else {
 						$currentCommit = false;
@@ -210,25 +211,25 @@ while (false !== ($entry = readdir($handle))) {
 				 * @var AttributeDiff[] $history
 				 */
 				$history = [];
-				foreach($trace as $revision) {
+				foreach ($trace as $revision) {
 					$diff = new AttributeDiff();
 					$diff->commit = $revision;
 
 					$source = $file[$revision]['source'];
 					$currentAttributes = extract_attributes($source);
 
-					foreach($currentAttributes as $attribute) {
-						if(!array_key_exists($attribute->name, $attributes)) {
+					foreach ($currentAttributes as $attribute) {
+						if (!array_key_exists($attribute->name, $attributes)) {
 							$attributes[$attribute->name] = $attribute;
 							$diff->added[] = $attribute;
-						} else if($attributes[$attribute->name] <> $attribute) {
+						} else if ($attributes[$attribute->name] <> $attribute) {
 							$attributes[$attribute->name] = $attribute;
 							$diff->modified[] = $attribute;
 						}
 					}
 
-					foreach($attributes as $attribute) {
-						if(!array_key_exists($attribute->name, $currentAttributes)) {
+					foreach ($attributes as $attribute) {
+						if (!array_key_exists($attribute->name, $currentAttributes)) {
 							unset($attributes[$attribute->name]);
 							$diff->removed[] = $attribute;
 						}
@@ -253,15 +254,19 @@ while (false !== ($entry = readdir($handle))) {
 	}
 }
 
+foreach ($projects as $project) {
+	file_put_contents('dump' . DIRECTORY_SEPARATOR . base64_encode($project->name) . '.json', json_encode($project));
+}
+
 file_put_contents('analysis.json', json_encode($projects));
 
-$morphia = array_values(array_filter($projects, function(Project &$p) {
+$morphia = array_values(array_filter($projects, function (Project &$p) {
 	return $p->isMorphia == true;
 }));
 file_put_contents('analysis_morphia.json', json_encode($morphia));
 
 
-$objectify = array_values(array_filter($projects, function(Project &$p) {
+$objectify = array_values(array_filter($projects, function (Project &$p) {
 	return $p->isObjectify == true;
 }));
 file_put_contents('analysis_objectify.json', json_encode($objectify));
