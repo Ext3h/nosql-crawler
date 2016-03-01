@@ -139,7 +139,12 @@ The resulting database can easily be handled in memory.
 See [model.php](model.php) for the format of the generated `analysis.json` file.
 This file contains an array of `Project` instances, describing each single analyzed project.
 
-Stage 4: Statistical evaluation
+Summary
 -------------------------------
 
-WIP, not automated yet.
+Stage 1 and 2 are generic and can be adapted to a wide number of applications - only the queries need to be adapted in order match the files of interest.
+The behavior of these stages is entirely controlled by the [config.ini](config.ini.dist) file in the same directory.
+
+For stage 1, changes to the Github website may require to update the Xpatch queries accordingly.
+
+Stage 3 is specific to the analysing Java projects for schema evolutions and only to a limited extent usable for other type of analysis.

@@ -5,7 +5,7 @@ function download($url, $dir)
 {
 	$output = [];
 	$return = 0;
-	exec('timeout ' . config()['download']['timeout'] . 's git clone ' . escapeshellarg($url) . ' ' . escapeshellarg($dir) . ' 2>&1', $output, $return);
+	exec('timeout ' . config()['downloader']['timeout'] . 's git clone ' . escapeshellarg($url) . ' ' . escapeshellarg($dir) . ' 2>&1', $output, $return);
 	if ($return) return false;
 	return true;
 }
@@ -48,10 +48,13 @@ function process($dir)
 
 	// Find all files in master branch which match the pattern
 	$files = [];
-	exec('grep -rl --include \*.java "@Entity"', $files);
-	exec('grep -rl --include \*.java "@Embedded"', $files);
-	exec('grep -rl --include \*.java "com.googlecode.objectify"', $files);
-	exec('grep -rl --include \*.java "org.mongodb.morphia"', $files);
+	$includes = implode(' ', array_map(function($include) {
+		return '--include '.escapeshellarg($include);
+	}, config()['downloader']['pattern']));
+	$terms = implode(' ', array_map(function($term) {
+		return '-e '.escapeshellarg($term);
+	}, config()['downloader']['term']));
+	exec('grep -rl '.$includes.' '.$terms, $files);
 	$files = array_unique($files);
 
 	foreach ($files as $file) {
@@ -88,7 +91,7 @@ function process($dir)
 
 function wrapper($repo)
 {
-	$basedir = config()['download']['tmp_dir'];
+	$basedir = config()['downloader']['tmp_dir'];
 	$dir = $basedir . DIRECTORY_SEPARATOR . base64_encode($repo);
 	$lockfile = $basedir . DIRECTORY_SEPARATOR . base64_encode($repo) . '.lock';
 	$datafile = 'repos/' . base64_encode($repo) . '.json';
@@ -116,7 +119,7 @@ function wrapper($repo)
 			$skip = true;
 		}
 		if (isset($data['github']['size'])) {
-			if ($data['github']['size'] * 1024 > config()['download']['max_size']) {
+			if ($data['github']['size'] * 1024 > config()['downloader']['max_size']) {
 				echo "$repo is too large\n";
 				$skip = true;
 			}

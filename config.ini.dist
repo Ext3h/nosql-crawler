@@ -6,7 +6,7 @@ password =
 useragent = 'NoSQL Crawler Ext3h/nosql-crawler'
 
 [crawler]
-; Terms to search for
+; Terms to search for, escaped according to the Github search method documentation
 term[] = '"import+com.googlecode.objectify"'
 term[] = '"import+org.mongodb.morphia"'
 term[] = 'language:java "@PostLoad"'
@@ -22,9 +22,17 @@ auxiliary[] = '"extends"'
 auxiliary[] = '"List"'
 auxiliary[] = '"util"'
 
-[download]
+[downloader]
 ; Maximum repository size in bytes
 max_size = 1000000000
 ; Timeout in seconds for checkout
 timeout = 30
 tmp_dir = /tmp/repos
+
+; Filename patterns to include, interpreted as glob patterns
+pattern[] = '*.java'
+; Terms to filter by, interpreted as POSIX basic regex
+term[] = '@Entity'
+term[] = '@Embedded'
+term[] = 'com.googlecode.objectify'
+term[] = 'org.mongodb.morphia'
