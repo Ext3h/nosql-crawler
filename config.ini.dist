@@ -21,12 +21,14 @@ auxiliary[] = '"static"'
 auxiliary[] = '"extends"'
 auxiliary[] = '"List"'
 auxiliary[] = '"util"'
+auxiliary[] = '"IgnoreSave"'
+auxiliary[] = '"Index"'
 
 [downloader]
 ; Maximum repository size in bytes
 max_size = 1000000000
 ; Timeout in seconds for checkout
-timeout = 30
+timeout = 6000
 tmp_dir = /tmp/repos
 
 ; Filename patterns to include, interpreted as glob patterns
